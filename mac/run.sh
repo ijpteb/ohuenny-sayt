@@ -44,7 +44,8 @@ until online; do sleep 10; done
 
 # 3. Туннель Cloudflare (без аккаунта; адрес новый при каждом запуске)
 : > "$CFLOG"
-"$CF" tunnel --no-autoupdate --url "http://127.0.0.1:$PORT" >>"$CFLOG" 2>&1 &
+# http2 (TCP) вместо QUIC (UDP): QUIC-соединение здесь обрывалось раз в пару минут
+"$CF" tunnel --no-autoupdate --protocol http2 --url "http://127.0.0.1:$PORT" >>"$CFLOG" 2>&1 &
 CF_PID=$!
 URL=""
 for _ in $(seq 1 60); do
