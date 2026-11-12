@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> </title>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; background: #fff; color: #111;
+         font: 600 clamp(28px, 8vw, 96px)/1.1 -apple-system, system-ui, sans-serif;
+         text-align: center; }
+  @media (prefers-color-scheme: dark) { body { background: #000; color: #fff; } }
+</style>
+</head>
+<body>
+<div id="t" hidden></div>
+<script>
+// Надпись берём с компьютера владельца через туннель Cloudflare.
+// Компьютер выключен (туннель не отвечает) — страница пустая.
+// Текущий адрес туннеля компьютер сам записывает в tunnel.json при каждом запуске.
+const el = document.getElementById('t');
+const TUNNEL = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/;
+
+function hide() { el.hidden = true; el.textContent = ''; document.title = ' '; }
+
+async function check() {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const cfg = await (await fetch('tunnel.json', { cache: 'no-store', signal: ctrl.signal })).json();
+    if (!cfg || !TUNNEL.test(cfg.url || '')) return hide();
+    const r = await fetch(cfg.url + '/text', { cache: 'no-store', signal: ctrl.signal });
+    const text = r.ok ? (await r.text()).trim() : '';
+    if (!text || text.length > 100) return hide();
+    el.textContent = text; el.hidden = false; document.title = text;
+  } catch (e) {
+    hide();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+check();
+setInterval(check, 15000);
+</script>
+</body>
+</html>
